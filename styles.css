@@ -222,3 +222,44 @@ header {
     border: none;
     padding: 5px 10px;
 }
+
+/* Add your existing CSS styles here */
+
+/* Styles for the More button */
+#load-more {
+    display: inline-block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #007BFF; /* Blue background color */
+    color: white; /* White text color */
+    border: none;
+    border-radius: 5px; /* Rounded corners */
+    font-size: 16px; /* Font size */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+#load-more:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+/* Center the More button */
+main {
+    text-align: center;
+}
+
+/* Styles for the Home button */
+.home-button {
+    display: inline-block;
+    margin: 10px 0;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.home-button:hover {
+    background-color: #45a049;
+}
+

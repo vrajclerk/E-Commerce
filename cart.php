@@ -1,14 +1,11 @@
 <?php
 include 'db.php';
 session_start();
-
 // Fetch the cart items from the session
 $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
-
 // Initialize total amount
 $total_amount = 0;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,53 +13,6 @@ $total_amount = 0;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cart</title>
     <link rel="stylesheet" type="text/css" href="styles.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-    $(document).ready(function() {
-        $('.update-quantity').change(function() {
-            var input = $(this);
-            var productId = input.data('product-id');
-            var quantity = input.val();
-
-            $.ajax({
-                url: 'add_to_cart.php',
-                type: 'POST',
-                data: { product_id: productId, action: 'update', quantity: quantity },
-                success: function(response) {
-                    if (response.status === 'success') {
-                        location.reload();
-                    } else {
-                        alert('Error updating quantity.');
-                    }
-                },
-                error: function() {
-                    alert('Error updating quantity.');
-                }
-            });
-        });
-
-        $('.remove-from-cart').click(function() {
-            var button = $(this);
-            var productId = button.data('product-id');
-
-            $.ajax({
-                url: 'add_to_cart.php',
-                type: 'POST',
-                data: { product_id: productId, action: 'remove' },
-                success: function(response) {
-                    if (response.status === 'success') {
-                        location.reload();
-                    } else {
-                        alert('Error removing product from cart.');
-                    }
-                },
-                error: function() {
-                    alert('Error removing product from cart.');
-                }
-            });
-        });
-    });
-    </script>
 </head>
 <body>
     <header>
@@ -89,9 +39,11 @@ $total_amount = 0;
                 <button type="submit">Apply</button>
             </form>
             <a href="index.php" class="home-button">Home</a>
+
         </div>
     </header>
     <main>
+  
         <div class="cart">
             <h1>Shopping Cart</h1>
             <?php if (!empty($cart)): ?>
@@ -100,7 +52,6 @@ $total_amount = 0;
                     $query = "SELECT * FROM products WHERE product_id = $product_id";
                     $result = $conn->query($query);
                     $product = $result->fetch_assoc();
-
                     if ($product) {
                         $total_amount += $product['price'] * $quantity;
                     ?>
@@ -108,12 +59,8 @@ $total_amount = 0;
                             <img src="images/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['title']); ?>">
                             <h2><?php echo htmlspecialchars($product['title']); ?></h2>
                             <p>Price: <?php echo htmlspecialchars($product['price']); ?></p>
-                            <p>
-                                Quantity:
-                                <input type="number" class="update-quantity" data-product-id="<?php echo $product_id; ?>" value="<?php echo htmlspecialchars($quantity); ?>" min="1">
-                            </p>
+                            <p>Quantity: <?php echo htmlspecialchars($quantity); ?></p>
                             <p>Total: <?php echo htmlspecialchars($product['price'] * $quantity); ?></p>
-                            <button type="button" class="remove-from-cart" data-product-id="<?php echo $product_id; ?>">Remove from Cart</button>
                         </div>
                     <?php
                     } else {
