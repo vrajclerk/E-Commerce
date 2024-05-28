@@ -59,8 +59,12 @@ $total_amount = 0;
                             <img src="images/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['title']); ?>">
                             <h2><?php echo htmlspecialchars($product['title']); ?></h2>
                             <p>Price: <?php echo htmlspecialchars($product['price']); ?></p>
-                            <p>Quantity: <?php echo htmlspecialchars($quantity); ?></p>
+                            <p>
+                                Quantity:
+                                <input type="number" class="update-quantity" data-product-id="<?php echo $product_id; ?>" value="<?php echo htmlspecialchars($quantity); ?>" min="1">
+                            </p>
                             <p>Total: <?php echo htmlspecialchars($product['price'] * $quantity); ?></p>
+                            <button type="button" class="remove-from-cart" data-product-id="<?php echo $product_id; ?>">Remove from Cart</button>
                         </div>
                     <?php
                     } else {
