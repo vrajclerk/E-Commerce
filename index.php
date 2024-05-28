@@ -36,6 +36,7 @@ $result = $conn->query($query);
     <header>
         <div class="banner">
             <form method="GET" action="index.php">
+            <a href="index.php" class="home-button">Home</a>
                 <input type="text" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars($search); ?>">
                 <select name="category">
                     <option value="">All Categories</option>
@@ -56,7 +57,8 @@ $result = $conn->query($query);
                 </select>
                 <button type="submit">Apply</button>
             </form>
-            <a href="index.php" class="home-button">Home</a>
+            
+            <a href="cart.php"class="cart-button" >Cart</a>
         </div>
     </header>
     <main>
@@ -66,7 +68,7 @@ $result = $conn->query($query);
                 while ($row = $result->fetch_assoc()) {
                     echo '<div class="product">';
                     echo '<a href="product_detail.php?id=' . $row['product_id'] . '">';
-                    echo '<img src="project_folder/images/' . $row['image'] . '" alt="' . $row['title'] . '">';
+                    echo '<img src="images/' . $row['image'] . '" alt="' . $row['title'] . '">';
                     echo '<h2>' . $row['title'] . '</h2>';
                     echo '</a>';
                     echo '<p>MRP: ' . $row['mrp'] . '</p>';

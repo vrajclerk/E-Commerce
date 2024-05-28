@@ -42,6 +42,7 @@ $total_amount = 0;
                 <button type="submit">Apply</button>
             </form>
             <a href="index.php" class="home-button">Home</a>
+            
         </div>
     </header>
     <main>
