@@ -84,31 +84,32 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
         });
 
         // Remove product
-        $(document).on('click', '.remove-from-cart', function(e) {
-            e.preventDefault(); 
-            var productId = $(this).data('product-id'); // Get the product ID from the data attribute
+        // $(document).on('click', '.remove-from-cart', function(e) {
+        //     e.preventDefault(); 
+        //     var productId = $(this).data('product-id'); // Get the product ID from the data attribute
 
-            // AJAX request to remove product from the cart
-            $.ajax({
-                url: 'remove_from_cart.php',
-                type: 'POST',
-                data: { product_id: productId },
-                success: function(response) {
-                    loadProducts(true); // Reload the products list
-                    alert('product removed from cart');
-                },
-                error: function() {
-                    alert('Error removing product from cart.');
-                }
-            });
-        });
+        //     // AJAX request to remove product from the cart
+        //     $.ajax({
+        //         url: 'remove_from_cart.php',
+        //         type: 'POST',
+        //         data: { product_id: productId },
+        //         success: function(response) {
+        //             loadProducts(true); // Reload the products list
+        //             alert('product removed from cart');
+        //         },
+        //         error: function() {
+        //             alert('Error removing product from cart.');
+        //         }
+        //     });
+        // });
 
         // Increase or decrease product quantity handling
         $(document).on('click', '.increase-quantity, .decrease-quantity', function(e) {
             e.preventDefault(); // Prevent default link click behavior
             var productId = $(this).data('product-id'); // Get the product ID from the data attribute
             var action = $(this).hasClass('increase-quantity') ? 'increase' : 'decrease'; // Determine action based on the class
-
+            var quantity = form.find('input[name="quantity"]').val();
+            
             // AJAX request to update product quantity in the cart
             $.ajax({
                 url: 'update_quantity.php',

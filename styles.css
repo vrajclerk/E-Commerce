@@ -54,7 +54,7 @@ header {
 }
 
 
-/* Styles for the Home button */
+
 .home-button {
     display: inline-block;
     margin: 10px 0;
@@ -129,19 +129,6 @@ header {
     background-color: #0056b3;
 }
 
-.checkout {
-    padding: 20px;
-    max-width: 800px;
-    margin: 0 auto;
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-}
-
-.checkout h1 {
-    text-align: center;
-    margin-bottom: 20px;
-}
 
 .cart-summary, .billing-info {
     margin-bottom: 20px;
@@ -167,59 +154,6 @@ header {
     text-align: right;
 }
 
-.billing-info form {
-    display: flex;
-    flex-direction: column;
-}
-
-.billing-info label {
-    margin-top: 10px;
-}
-
-.billing-info input {
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    margin-top: 5px;
-}
-
-.billing-info button {
-    margin-top: 20px;
-    padding: 10px;
-    font-size: 16px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-}
-
-.billing-info button:hover {
-    background-color: #218838;
-}
-
-.success {
-    text-align: center;
-    padding: 50px;
-}
-
-.success h1 {
-    margin-bottom: 20px;
-}
-
-.success p {
-    font-size: 18px;
-}
-.quantity-container {
-    margin-top: 10px;
-}
-
-.quantity-container input {
-    width: 50px;
-    text-align: center;
-}
 
 .remove-from-cart {
     background-color: #ff0000;

@@ -1,18 +1,31 @@
 <?php
-session_start(); 
+session_start();
 include 'db.php';
 
-// Check if an action is set and if it is 'remove'
-if (isset($_POST['action']) && $_POST['action'] == 'remove') {
-    $product_id = $_POST['product_id'];
-    
-    // Check if the product is in the cart and remove it
-    if (isset($_SESSION['cart'][$product_id])) {
-        unset($_SESSION['cart'][$product_id]);
-    }
+// Function to update quantity in the session cart
+function update_quantity($product_id, $quantity) {
+    $_SESSION['cart'][$product_id] = $quantity;
+}
 
-    echo json_encode(['status' => 'success']);
-    exit();
+// Function to remove a product from the session cart
+function remove_product($product_id) {
+    unset($_SESSION['cart'][$product_id]);
+}
+
+// Update quantity if form submitted
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action'])) {
+        $action = $_POST['action'];
+        $product_id = $_POST['product_id'];
+
+        if ($action === 'increase') {
+            update_quantity($product_id, $_SESSION['cart'][$product_id] + 1);
+        } elseif ($action === 'decrease') {
+            update_quantity($product_id, max(1, $_SESSION['cart'][$product_id] - 1));
+        } elseif ($action === 'remove') {
+            remove_product($product_id);
+        }
+    }
 }
 
 $total = 0;
@@ -28,24 +41,67 @@ $total = 0;
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
     $(document).ready(function() {
-        // Handle click event for removing products from the cart
-        $('.remove-from-cart').click(function(e) {
-            e.preventDefault(); 
-            var productId = $(this).data('product-id'); // Get the product ID from the data attribute
-
-            // AJAX request to remove the product from the cart
+        $('.quantity').change(function() {
+            var productId = $(this).data('product-id');
+            var quantity = $(this).val();
+            
             $.ajax({
                 url: 'cart.php',
                 type: 'POST',
-                data: { product_id: productId, action: 'remove' },
+                data: { action: 'update', product_id: productId, quantity: quantity },
                 success: function(response) {
-                    response = JSON.parse(response);
-                    if (response.status == 'success') {
-                        // Remove the product row from the table if successful
-                        $('#product-' + productId).remove();
-                    } else {
-                        alert('Failed to remove product from cart.');
-                    }
+                    location.reload(); // Reload the page after updating quantity
+                },
+                error: function() {
+                    alert('Error updating quantity.');
+                }
+            });
+        });
+
+        $('.increase-quantity').click(function(e) {
+            e.preventDefault();
+            var productId = $(this).data('product-id');
+
+            $.ajax({
+                url: 'cart.php',
+                type: 'POST',
+                data: { action: 'increase', product_id: productId },
+                success: function(response) {
+                    location.reload(); // Reload the page after increasing quantity
+                },
+                error: function() {
+                    alert('Error increasing quantity.');
+                }
+            });
+        });
+
+        $('.decrease-quantity').click(function(e) {
+            e.preventDefault();
+            var productId = $(this).data('product-id');
+
+            $.ajax({
+                url: 'cart.php',
+                type: 'POST',
+                data: { action: 'decrease', product_id: productId },
+                success: function(response) {
+                    location.reload(); // Reload the page after decreasing quantity
+                },
+                error: function() {
+                    alert('Error decreasing quantity.');
+                }
+            });
+        });
+
+        $('.remove-from-cart').click(function(e) {
+            e.preventDefault();
+            var productId = $(this).data('product-id');
+
+            $.ajax({
+                url: 'cart.php',
+                type: 'POST',
+                data: { action: 'remove', product_id: productId },
+                success: function(response) {
+                    location.reload(); // Reload the page after removing product
                 },
                 error: function() {
                     alert('Error removing product from cart.');
@@ -71,29 +127,31 @@ $total = 0;
                 <th>Action</th>
             </tr>
             <?php
-            // Check if the cart is set and not empty
             if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
-                // Loop through the cart items
                 foreach ($_SESSION['cart'] as $product_id => $quantity) {
-                    
                     $query = "SELECT * FROM products WHERE product_id = $product_id";
                     $result = $conn->query($query);
                     $product = $result->fetch_assoc();
-                    $total_price = $product['price'] * $quantity; 
+                    $total_price = $product['price'] * $quantity;
                     $total += $total_price;
                     ?>
                     <tr id="product-<?php echo $product_id; ?>">
                         <td><img src="images/<?php echo $product['image']; ?>" alt="<?php echo $product['title']; ?>" width="50"></td>
                         <td><?php echo $product['title']; ?></td>
                         <td><?php echo $product['price']; ?></td>
-                        <td><?php echo $quantity; ?></td>
+                        <td>
+                        <button class="increase-quantity" data-product-id="<?php echo $product_id; ?>">+</button>
+                            <input type="number" class="quantity" data-product-id="<?php echo $product_id; ?>" value="<?php echo $quantity; ?>" min="1">
+                            
+                            <button class="decrease-quantity" data-product-id="<?php echo $product_id; ?>">-</button>
+                        </td>
                         <td><?php echo $total_price; ?></td>
                         <td><a href="#" class="remove-from-cart" data-product-id="<?php echo $product_id; ?>">Remove</a></td>
                     </tr>
                     <?php
                 }
             } else {
-                echo '<tr><td colspan="6">Your cart is empty.</td></tr>';
+                echo '<tr><td colspan=""6">Your cart is empty.</td></tr>';
             }
             ?>
             <tr>
@@ -104,3 +162,4 @@ $total = 0;
     </main>
 </body>
 </html>
+
