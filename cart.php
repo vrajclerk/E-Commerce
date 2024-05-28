@@ -1,63 +1,82 @@
 <?php
-session_start();
 include 'db.php';
+session_start();
 
-if (isset($_POST['action'])) {
-    $action = $_POST['action'];
-    $product_id = $_POST['product_id'];
-    
-    switch ($action) {
-        case 'update':
-            $quantity = $_POST['quantity'];
-            if ($quantity > 0) {
-                $_SESSION['cart'][$product_id] = $quantity;
-            } else {
-                unset($_SESSION['cart'][$product_id]);
-            }
-            break;
-        case 'delete':
-            unset($_SESSION['cart'][$product_id]);
-            break;
-    }
-    header("Location: cart.php");
-    exit();
-}
+// Fetch the cart items from the session
+$cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
 
-if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
-    $cart = $_SESSION['cart'];
-    $products = array();
-    
-    foreach ($cart as $product_id => $quantity) {
-        $result = $conn->query("SELECT * FROM tbl_products WHERE product_id = $product_id");
-        $product = $result->fetch_assoc();
-        $product['quantity'] = $quantity;
-        $products[] = $product;
-    }
-    
-    foreach ($products as $product) {
-        echo "<div>";
-        echo "<img src='images/{$product['image']}' />";
-        echo "<p>{$product['title']}</p>";
-        echo "<p>MRP: {$product['mrp']}</p>";
-        echo "<p>Price: {$product['price']}</p>";
-        echo "<p>Quantity: {$product['quantity']}</p>";
-        echo "<p>Total: " . ($product['price'] * $product['quantity']) . "</p>";
-        echo "<form method='post' action='cart.php'>";
-        echo "<input type='hidden' name='product_id' value='{$product['product_id']}' />";
-        echo "<input type='number' name='quantity' value='{$product['quantity']}' />";
-        echo "<button type='submit' name='action' value='update'>Update</button>";
-        echo "<button type='submit' name='action' value='delete'>Delete</button>";
-        echo "</form>";
-        echo "</div>";
-    }
-    
-    $total = array_sum(array_map(function($product) {
-        return $product['price'] * $product['quantity'];
-    }, $products));
-    
-    echo "<p>Total Amount: $total</p>";
-    echo "<a href='checkout.php'>Proceed to Checkout</a>";
-} else {
-    echo "Your cart is empty.";
-}
+// Initialize total amount
+$total_amount = 0;
 ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="banner">
+            <form method="GET" action="index.php">
+                <input type="text" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars(isset($_GET['search']) ? $_GET['search'] : ''); ?>">
+                <select name="category">
+                    <option value="">All Categories</option>
+                    <?php
+                    // Fetch categories from the database
+                    $cat_query = "SELECT * FROM category";
+                    $cat_result = $conn->query($cat_query);
+                    while ($row = $cat_result->fetch_assoc()) {
+                        echo '<option value="' . $row['id'] . '"' . (isset($_GET['category']) && $_GET['category'] == $row['id'] ? ' selected' : '') . '>' . $row['name'] . '</option>';
+                    }
+                    ?>
+                </select>
+                <select name="sort">
+                    <option value="">Sort By</option>
+                    <option value="price_asc" <?php echo isset($_GET['sort']) && $_GET['sort'] == 'price_asc' ? 'selected' : ''; ?>>Price Low to High</option>
+                    <option value="price_desc" <?php echo isset($_GET['sort']) && $_GET['sort'] == 'price_desc' ? 'selected' : ''; ?>>Price High to Low</option>
+                    <option value="latest" <?php echo isset($_GET['sort']) && $_GET['sort'] == 'latest' ? 'selected' : ''; ?>>Latest Products</option>
+                </select>
+                <button type="submit">Apply</button>
+            </form>
+            <a href="index.php" class="home-button">Home</a>
+        </div>
+    </header>
+    <main>
+        <div class="cart">
+            <h1>Shopping Cart</h1>
+            <?php if (!empty($cart)): ?>
+                <?php foreach ($cart as $product_id => $quantity): ?>
+                    <?php
+                    $query = "SELECT * FROM products WHERE product_id = $product_id";
+                    $result = $conn->query($query);
+                    $product = $result->fetch_assoc();
+
+                    if ($product) {
+                        $total_amount += $product['price'] * $quantity;
+                    ?>
+                        <div class="cart-item">
+                            <img src="project_folder/images/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['title']); ?>">
+                            <h2><?php echo htmlspecialchars($product['title']); ?></h2>
+                            <p>Price: <?php echo htmlspecialchars($product['price']); ?></p>
+                            <p>Quantity: <?php echo htmlspecialchars($quantity); ?></p>
+                            <p>Total: <?php echo htmlspecialchars($product['price'] * $quantity); ?></p>
+                        </div>
+                    <?php
+                    } else {
+                        echo '<p>Product not found</p>';
+                    }
+                    ?>
+                <?php endforeach; ?>
+                <div class="cart-total">
+                    <h2>Total Amount: <?php echo $total_amount; ?></h2>
+                </div>
+            <?php else: ?>
+                <p>Your cart is empty</p>
+            <?php endif; ?>
+        </div>
+    </main>
+</body>
+</html>

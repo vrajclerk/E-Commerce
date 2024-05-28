@@ -1,27 +1,23 @@
 <?php
 include 'db.php';
 
+// Get search, category, and sort parameters from the GET request
 $search = isset($_GET['search']) ? $_GET['search'] : '';
-$category_id = isset($_GET['category_id']) ? $_GET['category_id'] : '';
+$category = isset($_GET['category']) ? $_GET['category'] : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
 
-$query = "SELECT p.product_id, p.image, p.title, p.mrp, p.price, (p.mrp - p.price) AS discount 
-          FROM products p 
-          WHERE 1";
+// Build the query to fetch products
+$query = "SELECT p.*, (p.mrp - p.price) AS discount FROM products p WHERE p.title LIKE '%$search%'";
 
-if ($search) {
-    $query .= " AND (p.title LIKE '%$search%' OR p.description LIKE '%$search%')";
+if ($category) {
+    $query .= " AND p.category_id = $category";
 }
 
-if ($category_id) {
-    $query .= " AND p.category_id = $category_id";
-}
-
-if ($sort == 'price_high_to_low') {
-    $query .= " ORDER BY p.price DESC";
-} elseif ($sort == 'price_low_to_high') {
+if ($sort == 'price_asc') {
     $query .= " ORDER BY p.price ASC";
-} else {
+} elseif ($sort == 'price_desc') {
+    $query .= " ORDER BY p.price DESC";
+} elseif ($sort == 'latest') {
     $query .= " ORDER BY p.product_id DESC";
 }
 
@@ -34,59 +30,59 @@ $result = $conn->query($query);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My E-commerce Site</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
     <header>
-        <div class="container">
-            <div id="branding">
-                <h1><span class="highlight">My</span> E-commerce</h1>
-            </div>
-            <nav>
-                <ul>
-                    <li class="current"><a href="index.php">Home</a></li>
-                    <li><a href="cart.php">Cart</a></li>
-                    <!-- <li><a href="login.php">Login</a></li>
-                    <li><a href="register.php">Register</a></li>
-                    <li><a href="logout.php">Logout</a></li> -->
-                </ul>
-            </nav>
+        <div class="banner">
+            <form method="GET" action="index.php">
+                <input type="text" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars($search); ?>">
+                <select name="category">
+                    <option value="">All Categories</option>
+                    <?php
+                    // Fetch categories from the database
+                    $cat_query = "SELECT * FROM category";
+                    $cat_result = $conn->query($cat_query);
+                    while ($row = $cat_result->fetch_assoc()) {
+                        echo '<option value="' . $row['id'] . '"' . ($category == $row['id'] ? ' selected' : '') . '>' . $row['name'] . '</option>';
+                    }
+                    ?>
+                </select>
+                <select name="sort">
+                    <option value="">Sort By</option>
+                    <option value="price_asc" <?php echo $sort == 'price_asc' ? 'selected' : ''; ?>>Price Low to High</option>
+                    <option value="price_desc" <?php echo $sort == 'price_desc' ? 'selected' : ''; ?>>Price High to Low</option>
+                    <option value="latest" <?php echo $sort == 'latest' ? 'selected' : ''; ?>>Latest Products</option>
+                </select>
+                <button type="submit">Apply</button>
+            </form>
+            <a href="index.php" class="home-button">Home</a>
         </div>
     </header>
-
-    <div class="container">
-        <form method="GET" action="index.php">
-            <input type="text" name="search" placeholder="Search products..." value="<?php echo $search; ?>">
-            <select name="category_id">
-                <option value="">All Categories</option>
-                <?php
-                $categories = $conn->query("SELECT id, name FROM category");
-                while ($category = $categories->fetch_assoc()) {
-                    $selected = $category_id == $category['id'] ? 'selected' : '';
-                    echo "<option value='{$category['id']}' $selected>{$category['name']}</option>";
-                }
-                ?>
-            </select>
-            <select name="sort">
-                <option value="">Sort by</option>
-                <option value="price_low_to_high" <?php echo $sort == 'price_low_to_high' ? 'selected' : ''; ?>>Price Low to High</option>
-                <option value="price_high_to_low" <?php echo $sort == 'price_high_to_low' ? 'selected' : ''; ?>>Price High to Low</option>
-            </select>
-            <button type="submit">Filter</button>
-        </form>
-
+    <main>
         <div class="products">
-            <?php while ($row = $result->fetch_assoc()) { ?>
-                <div class="product">
-                    <img src="images/<?php echo $row['image']; ?>" alt="<?php echo $row['title']; ?>">
-                    <h2><?php echo $row['title']; ?></h2>
-                    <p>MRP: <?php echo $row['mrp']; ?></p>
-                    <p>Price: <?php echo $row['price']; ?></p>
-                    <p>Discount: <?php echo $row['discount']; ?></p>
-                    <a href="product_detail.php?product_id=<?php echo $row['product_id']; ?>">View Details</a>
-                </div>
-            <?php } ?>
+            <?php
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    echo '<div class="product">';
+                    echo '<a href="product_detail.php?id=' . $row['product_id'] . '">';
+                    echo '<img src="project_folder/images/' . $row['image'] . '" alt="' . $row['title'] . '">';
+                    echo '<h2>' . $row['title'] . '</h2>';
+                    echo '</a>';
+                    echo '<p>MRP: ' . $row['mrp'] . '</p>';
+                    echo '<p>Price: ' . $row['price'] . '</p>';
+                    echo '<p>Discount: ' . $row['discount'] . '</p>';
+                    echo '<form method="POST" action="add_to_cart.php">';
+                    echo '<input type="hidden" name="product_id" value="' . $row['product_id'] . '">';
+                    echo '<button type="submit">Add to Cart</button>';
+                    echo '</form>';
+                    echo '</div>';
+                }
+            } else {
+                echo 'No products found';
+            }
+            ?>
         </div>
-    </div>
+    </main>
 </body>
 </html>
