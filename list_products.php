@@ -37,7 +37,7 @@ $product = $result->fetch_assoc();
 
     <div class="container">
         <div class="product-detail">
-            <img src="C:/wamp64/www/E-Commerce/E-Commerce/images<?php echo $product['image']; ?>" alt="<?php echo $product['title']; ?>">
+            <img src="/images<?php echo $product['image']; ?>" alt="<?php echo $product['title']; ?>">
             <h1><?php echo $product['title']; ?></h1>
             <p>Category: <?php echo $product['category']; ?></p>
             <p>MRP: <?php echo $product['mrp']; ?></p>

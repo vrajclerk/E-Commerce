@@ -14,7 +14,8 @@ $product = $result->fetch_assoc();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $product['title']; ?></title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    
 </head>
 <body>
     <header>
@@ -44,7 +45,7 @@ $product = $result->fetch_assoc();
     </header>
     <main>
         <div class="product-detail">
-            <img src="C:/wamp64/www/E-Commerce/E-Commerce/images<?php echo $product['image']; ?>" alt="<?php echo $product['title']; ?>">
+            <img src="/images<?php echo $product['image']; ?>" alt="<?php echo $product['title']; ?>">
             <h1><?php echo $product['title']; ?></h1>
             <p>MRP: <?php echo $product['mrp']; ?></p>
             <p>Price: <?php echo $product['price']; ?></p>

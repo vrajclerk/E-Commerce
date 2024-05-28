@@ -207,3 +207,18 @@ header {
 .success p {
     font-size: 18px;
 }
+.quantity-container {
+    margin-top: 10px;
+}
+
+.quantity-container input {
+    width: 50px;
+    text-align: center;
+}
+
+.remove-from-cart {
+    background-color: #ff0000;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+}
