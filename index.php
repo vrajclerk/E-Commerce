@@ -1,34 +1,14 @@
 <?php
 include 'db.php';
-include 'functions.php';
+include 'functions.php'; 
+// Start the session to track user session data
 session_start();
 
+// Retrieve search, category, and sort parameters from the URL query string
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $category = isset($_GET['category']) ? $_GET['category'] : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
 
-// function fetch_products($conn, $search, $category, $sort, $limit = 5, $offset = 0) {
-//     $query = "SELECT * FROM products WHERE title LIKE '%$search%'";
-//     if ($category != '') {
-//         $query .= " AND category_id = $category";
-//     }
-//     switch ($sort) {
-//         case 'price_asc':
-//             $query .= " ORDER BY price ASC";
-//             break;
-//         case 'price_desc':
-//             $query .= " ORDER BY price DESC";
-//             break;
-//         case 'latest':
-//             $query .= " ORDER BY product_id DESC";
-//             break;
-//         default:
-//             $query .= " ORDER BY product_id DESC";
-//             break;
-//     }
-//     $query .= " LIMIT $limit OFFSET $offset";
-//     return $conn->query($query);
-// }
 ?>
 
 <!DOCTYPE html>
@@ -41,44 +21,61 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
     $(document).ready(function() {
+        // Initialize offset and limit for product loading
         var offset = 0;
-        var limit = 4;
+        var limit = 5;
 
-        function loadProducts() {
+        // Function to load products with optional reset flag
+        function loadProducts(reset = false) {
+            if (reset) {
+                offset = 0;
+                $('#product-list').empty(); // Clear the product list if reset is true
+            }
+            // AJAX request to fetch products from the server
             $.ajax({
                 url: 'fetch_products.php',
                 type: 'GET',
                 data: {
-                    search: '<?php echo $search; ?>',
-                    category: '<?php echo $category; ?>',
-                    sort: '<?php echo $sort; ?>',
+                    search: $('#search').val(),
+                    category: $('#category').val(),
+                    sort: $('#sort').val(),
                     limit: limit,
                     offset: offset
                 },
                 success: function(response) {
-                    $('#product-list').append(response);
-                    offset += limit;
+                    $('#product-list').append(response); // Append the response to the product list
+                    offset += limit; // Increment the offset for the next set of products
                 }
             });
         }
 
+        // Initial load of products 
         loadProducts();
 
+        // Load more products when the 'Load More' button is clicked
         $('#load-more').click(function() {
             loadProducts();
         });
 
-        $(document).on('submit', '.add-to-cart-form', function(e) {
-            e.preventDefault();
-            var form = $(this);
-            var productId = form.find('input[name="product_id"]').val();
+        // Reload products when search, category, or sort inputs change
+        $('#search, #category, #sort').on('change keyup', function() {
+            loadProducts(true);
+        });
 
+        // Add to cart handling
+        $(document).on('submit', '.add-to-cart-form', function(e) {
+            e.preventDefault(); 
+            var form = $(this);
+            var productId = form.find('input[name="product_id"]').val(); // Get productID 
+
+            // AJAX request to add product to the cart
             $.ajax({
                 url: 'add_to_cart.php',
                 type: 'POST',
                 data: { product_id: productId },
                 success: function(response) {
-                    form.find('button').text('Added to Cart').attr('disabled', true);
+                    form.find('button').text('Added to Cart').attr('disabled', true); // Update button text and disable it
+                    alert('product added to cart');
                 },
                 error: function() {
                     alert('Error adding product to cart.');
@@ -86,16 +83,19 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
             });
         });
 
+        // Remove product
         $(document).on('click', '.remove-from-cart', function(e) {
-            e.preventDefault();
-            var productId = $(this).data('product-id');
+            e.preventDefault(); 
+            var productId = $(this).data('product-id'); // Get the product ID from the data attribute
 
+            // AJAX request to remove product from the cart
             $.ajax({
                 url: 'remove_from_cart.php',
                 type: 'POST',
                 data: { product_id: productId },
                 success: function(response) {
-                    loadProducts();
+                    loadProducts(true); // Reload the products list
+                    alert('product removed from cart');
                 },
                 error: function() {
                     alert('Error removing product from cart.');
@@ -103,17 +103,20 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
             });
         });
 
+        // Increase or decrease product quantity handling
         $(document).on('click', '.increase-quantity, .decrease-quantity', function(e) {
-            e.preventDefault();
-            var productId = $(this).data('product-id');
-            var action = $(this).hasClass('increase-quantity') ? 'increase' : 'decrease';
+            e.preventDefault(); // Prevent default link click behavior
+            var productId = $(this).data('product-id'); // Get the product ID from the data attribute
+            var action = $(this).hasClass('increase-quantity') ? 'increase' : 'decrease'; // Determine action based on the class
 
+            // AJAX request to update product quantity in the cart
             $.ajax({
                 url: 'update_quantity.php',
                 type: 'POST',
                 data: { product_id: productId, action: action },
                 success: function(response) {
-                    loadProducts();
+                    loadProducts(true); // Reload the products list
+                    alert('quantity updated');
                 },
                 error: function() {
                     alert('Error updating quantity.');
@@ -127,33 +130,37 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
     <header>
         <div class="banner">
             <form method="GET" action="index.php">
-                <input type="text" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars($search); ?>">
-                <select name="category">
+                <a href="index.php" class="home-button">Home</a>
+              
+                <input type="text" id="search" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars($search); ?>">
+               
+                <select id="category" name="category">
                     <option value="">All Categories</option>
                     <?php
                     $cat_query = "SELECT * FROM category";
                     $cat_result = $conn->query($cat_query);
+                    // Loop through the categories and create options for the dropdown
                     while ($row = $cat_result->fetch_assoc()) {
                         echo '<option value="' . $row['id'] . '"' . ($category == $row['id'] ? ' selected' : '') . '>' . $row['name'] . '</option>';
                     }
                     ?>
                 </select>
-                <select name="sort">
+              
+                <select id="sort" name="sort">
                     <option value="">Sort By</option>
                     <option value="price_asc" <?php echo $sort == 'price_asc' ? 'selected' : ''; ?>>Price Low to High</option>
                     <option value="price_desc" <?php echo $sort == 'price_desc' ? 'selected' : ''; ?>>Price High to Low</option>
                     <option value="latest" <?php echo $sort == 'latest' ? 'selected' : ''; ?>>Latest Products</option>
                 </select>
-                <button type="submit">Apply</button>
+                <!-- <button type="submit">Apply</button> -->
             </form>
-            <a href="index.php" class="home-button">Home</a>
             <a href="cart.php" class="home-button">Cart</a>
         </div>
     </header>
     <main>
+        
         <div id="product-list" class="products"></div>
-        <button id="load-more" style="background-color: #007BFF; color: white; padding: 10px 20px; border-radius: 5px;">More</button>
-
+        <button id="load-more">More</button>
     </main>
 </body>
 </html>

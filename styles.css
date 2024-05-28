@@ -53,17 +53,22 @@ header {
     background-color: #218838;
 }
 
+
+/* Styles for the Home button */
 .home-button {
-    background-color: #28a745;
+    display: inline-block;
+    margin: 10px 0;
+    padding: 10px 20px;
+    background-color: #4CAF50;
     color: white;
-    padding: 10px 15px;
     text-decoration: none;
     border-radius: 5px;
-    transition: background-color 0.3s;
-    justify-content: left;
-    align-items: left;
-    
 }
+
+.home-button:hover {
+    background-color: #45a049;
+}
+
 
 .cart-button:hover {
     background-color: #218838;

@@ -1,84 +1,106 @@
 <?php
+session_start(); 
 include 'db.php';
-session_start();
-// Fetch the cart items from the session
-$cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
-// Initialize total amount
-$total_amount = 0;
+
+// Check if an action is set and if it is 'remove'
+if (isset($_POST['action']) && $_POST['action'] == 'remove') {
+    $product_id = $_POST['product_id'];
+    
+    // Check if the product is in the cart and remove it
+    if (isset($_SESSION['cart'][$product_id])) {
+        unset($_SESSION['cart'][$product_id]);
+    }
+
+    echo json_encode(['status' => 'success']);
+    exit();
+}
+
+$total = 0;
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cart</title>
-    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        // Handle click event for removing products from the cart
+        $('.remove-from-cart').click(function(e) {
+            e.preventDefault(); 
+            var productId = $(this).data('product-id'); // Get the product ID from the data attribute
+
+            // AJAX request to remove the product from the cart
+            $.ajax({
+                url: 'cart.php',
+                type: 'POST',
+                data: { product_id: productId, action: 'remove' },
+                success: function(response) {
+                    response = JSON.parse(response);
+                    if (response.status == 'success') {
+                        // Remove the product row from the table if successful
+                        $('#product-' + productId).remove();
+                    } else {
+                        alert('Failed to remove product from cart.');
+                    }
+                },
+                error: function() {
+                    alert('Error removing product from cart.');
+                }
+            });
+        });
+    });
+    </script>
 </head>
 <body>
     <header>
-        <div class="banner">
-            <form method="GET" action="index.php">
-                <input type="text" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars(isset($_GET['search']) ? $_GET['search'] : ''); ?>">
-                <select name="category">
-                    <option value="">All Categories</option>
-                    <?php
-                    // Fetch categories from the database
-                    $cat_query = "SELECT * FROM category";
-                    $cat_result = $conn->query($cat_query);
-                    while ($row = $cat_result->fetch_assoc()) {
-                        echo '<option value="' . $row['id'] . '"' . (isset($_GET['category']) && $_GET['category'] == $row['id'] ? ' selected' : '') . '>' . $row['name'] . '</option>';
-                    }
-                    ?>
-                </select>
-                <select name="sort">
-                    <option value="">Sort By</option>
-                    <option value="price_asc" <?php echo isset($_GET['sort']) && $_GET['sort'] == 'price_asc' ? 'selected' : ''; ?>>Price Low to High</option>
-                    <option value="price_desc" <?php echo isset($_GET['sort']) && $_GET['sort'] == 'price_desc' ? 'selected' : ''; ?>>Price High to Low</option>
-                    <option value="latest" <?php echo isset($_GET['sort']) && $_GET['sort'] == 'latest' ? 'selected' : ''; ?>>Latest Products</option>
-                </select>
-                <button type="submit">Apply</button>
-            </form>
-            <a href="index.php" class="home-button">Home</a>
-
-        </div>
+        <h1>Shopping Cart</h1>
+        <a href="index.php" class="home-button">Home</a>
     </header>
     <main>
-  
-        <div class="cart">
-            <h1>Shopping Cart</h1>
-            <?php if (!empty($cart)): ?>
-                <?php foreach ($cart as $product_id => $quantity): ?>
-                    <?php
+        <table>
+            <tr>
+                <th>Product</th>
+                <th>Title</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+            <?php
+            // Check if the cart is set and not empty
+            if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
+                // Loop through the cart items
+                foreach ($_SESSION['cart'] as $product_id => $quantity) {
+                    
                     $query = "SELECT * FROM products WHERE product_id = $product_id";
                     $result = $conn->query($query);
                     $product = $result->fetch_assoc();
-                    if ($product) {
-                        $total_amount += $product['price'] * $quantity;
+                    $total_price = $product['price'] * $quantity; 
+                    $total += $total_price;
                     ?>
-                        <div class="cart-item">
-                            <img src="images/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['title']); ?>">
-                            <h2><?php echo htmlspecialchars($product['title']); ?></h2>
-                            <p>Price: <?php echo htmlspecialchars($product['price']); ?></p>
-                            <p>
-                                Quantity:
-                                <input type="number" class="update-quantity" data-product-id="<?php echo $product_id; ?>" value="<?php echo htmlspecialchars($quantity); ?>" min="1">
-                            </p>
-                            <p>Total: <?php echo htmlspecialchars($product['price'] * $quantity); ?></p>
-                            <button type="button" class="remove-from-cart" data-product-id="<?php echo $product_id; ?>">Remove from Cart</button>
-                        </div>
+                    <tr id="product-<?php echo $product_id; ?>">
+                        <td><img src="images/<?php echo $product['image']; ?>" alt="<?php echo $product['title']; ?>" width="50"></td>
+                        <td><?php echo $product['title']; ?></td>
+                        <td><?php echo $product['price']; ?></td>
+                        <td><?php echo $quantity; ?></td>
+                        <td><?php echo $total_price; ?></td>
+                        <td><a href="#" class="remove-from-cart" data-product-id="<?php echo $product_id; ?>">Remove</a></td>
+                    </tr>
                     <?php
-                    } else {
-                        echo '<p>Product not found</p>';
-                    }
-                    ?>
-                <?php endforeach; ?>
-                <div class="cart-total">
-                    <h2>Total Amount: <?php echo $total_amount; ?></h2>
-                </div>
-            <?php else: ?>
-                <p>Your cart is empty</p>
-            <?php endif; ?>
-        </div>
+                }
+            } else {
+                echo '<tr><td colspan="6">Your cart is empty.</td></tr>';
+            }
+            ?>
+            <tr>
+                <td colspan="4">Total</td>
+                <td colspan="2"><?php echo $total; ?></td>
+            </tr>
+        </table>
     </main>
 </body>
 </html>
