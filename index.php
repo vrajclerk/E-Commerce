@@ -1,24 +1,29 @@
 <?php
 include 'db.php';
+session_start();
 
-// Get search, category, and sort parameters from the GET request
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $category = isset($_GET['category']) ? $_GET['category'] : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
 
-// Build the query to fetch products
-$query = "SELECT p.*, (p.mrp - p.price) AS discount FROM products p WHERE p.title LIKE '%$search%'";
-
-if ($category) {
-    $query .= " AND p.category_id = $category";
+// Fetch products from the database based on search, category, and sort
+$query = "SELECT * FROM products WHERE title LIKE '%$search%'";
+if ($category != '') {
+    $query .= " AND category_id = $category";
 }
-
-if ($sort == 'price_asc') {
-    $query .= " ORDER BY p.price ASC";
-} elseif ($sort == 'price_desc') {
-    $query .= " ORDER BY p.price DESC";
-} elseif ($sort == 'latest') {
-    $query .= " ORDER BY p.product_id DESC";
+switch ($sort) {
+    case 'price_asc':
+        $query .= " ORDER BY price ASC";
+        break;
+    case 'price_desc':
+        $query .= " ORDER BY price DESC";
+        break;
+    case 'latest':
+        $query .= " ORDER BY product_id DESC";
+        break;
+    default:
+        $query .= " ORDER BY product_id DESC";
+        break;
 }
 
 $result = $conn->query($query);
@@ -29,8 +34,93 @@ $result = $conn->query($query);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My E-commerce Site</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>Products</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        // Function to handle adding/removing products from the cart
+        $('.product').each(function() {
+            var productId = $(this).data('product-id');
+            var quantityElement = $(this).find('.quantity');
+
+            // Check if the product is already in the cart
+            $.ajax({
+                url: 'check_cart.php',
+                type: 'GET',
+                data: { product_id: productId },
+                success: function(response) {
+                    if (response.inCart) {
+                        quantityElement.val(response.quantity); // Set quantity
+                        quantityElement.prop('disabled', false); // Enable quantity input
+                        $(this).find('.add-to-cart').hide(); // Hide "Add to Cart" button
+                        $(this).find('.remove-from-cart').show(); // Show "Remove from Cart" button
+                    } else {
+                        quantityElement.val(1); // Set default quantity to 1
+                        quantityElement.prop('disabled', true); // Disable quantity input
+                        $(this).find('.add-to-cart').show(); // Show "Add to Cart" button
+                        $(this).find('.remove-from-cart').hide(); // Hide "Remove from Cart" button
+                    }
+                }
+            });
+
+            // Add to Cart button click event
+            $(this).on('click', '.add-to-cart', function(e) {
+                e.preventDefault();
+                var quantity = quantityElement.val(); // Get quantity from input
+                $.ajax({
+                    url: 'add_to_cart.php',
+                    type: 'POST',
+                    data: { product_id: productId, quantity: quantity },
+                    success: function(response) {
+                        alert('Product added to cart!');
+                        quantityElement.prop('disabled', false); // Enable quantity input
+                        $('.add-to-cart').hide(); // Hide "Add to Cart" button
+                        $('.remove-from-cart').show(); // Show "Remove from Cart" button
+                    },
+                    error: function() {
+                        alert('Error adding product to cart.');
+                    }
+                });
+            });
+
+            // Remove from Cart button click event
+            $(this).on('click', '.remove-from-cart', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: 'remove_from_cart.php',
+                    type: 'POST',
+                    data: { product_id: productId },
+                    success: function(response) {
+                        alert('Product removed from cart!');
+                        quantityElement.prop('disabled', true); // Disable quantity input
+                        $('.add-to-cart').show(); // Show "Add to Cart" button
+                        $('.remove-from-cart').hide(); // Hide "Remove from Cart" button
+                    },
+                    error: function() {
+                        alert('Error removing product from cart.');
+                    }
+                });
+            });
+
+            // Quantity input change event
+            quantityElement.change(function() {
+                var newQuantity = $(this).val();
+                $.ajax({
+                    url: 'update_cart.php',
+                    type: 'POST',
+                    data: { product_id: productId, quantity: newQuantity },
+                    success: function(response) {
+                        alert('Quantity updated!');
+                    },
+                    error: function() {
+                        alert('Error updating quantity.');
+                    }
+                });
+            });
+        });
+    });
+    </script>
 </head>
 <body>
     <header>
@@ -57,31 +147,25 @@ $result = $conn->query($query);
                 <button type="submit">Apply</button>
             </form>
             <a href="index.php" class="home-button">Home</a>
+            <a href="cart.php" class="cart-button">Cart</a>
         </div>
     </header>
     <main>
         <div class="products">
-            <?php
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo '<div class="product">';
-                    echo '<a href="product_detail.php?id=' . $row['product_id'] . '">';
-                    echo '<img src="project_folder/images/' . $row['image'] . '" alt="' . $row['title'] . '">';
-                    echo '<h2>' . $row['title'] . '</h2>';
-                    echo '</a>';
-                    echo '<p>MRP: ' . $row['mrp'] . '</p>';
-                    echo '<p>Price: ' . $row['price'] . '</p>';
-                    echo '<p>Discount: ' . $row['discount'] . '</p>';
-                    echo '<form method="POST" action="add_to_cart.php">';
-                    echo '<input type="hidden" name="product_id" value="' . $row['product_id'] . '">';
-                    echo '<button type="submit">Add to Cart</button>';
-                    echo '</form>';
-                    echo '</div>';
-                }
-            } else {
-                echo 'No products found';
-            }
-            ?>
+            <?php while ($row = $result->fetch_assoc()): ?>
+                <div class="product" data-product-id="<?php echo $row['product_id']; ?>">
+                    <img src="images/<?php echo htmlspecialchars($row['image']); ?>" alt="<?php echo htmlspecialchars($row['title']); ?>">
+                    <h2><?php echo htmlspecialchars($row['title']); ?></h2>
+                    <p>MRP: <?php echo htmlspecialchars($row['mrp']); ?></p>
+                    <p>Price: <?php echo htmlspecialchars($row['price']); ?></p>
+                    <p>Discount: <?php echo round((($row['mrp'] - $row['price']) / $row['mrp']) * 100); ?>%</p>
+                    <form>
+                        <input type="number" class="quantity" value="1" min="1">
+                        <button class="add-to-cart">Add to Cart</button>
+                        <button class="remove-from-cart" style="display: none;">Remove from Cart</button>
+                    </form>
+                </div>
+            <?php endwhile; ?>
         </div>
     </main>
 </body>

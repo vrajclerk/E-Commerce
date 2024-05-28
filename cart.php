@@ -15,7 +15,54 @@ $total_amount = 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cart</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        $('.update-quantity').change(function() {
+            var input = $(this);
+            var productId = input.data('product-id');
+            var quantity = input.val();
+
+            $.ajax({
+                url: 'add_to_cart.php',
+                type: 'POST',
+                data: { product_id: productId, action: 'update', quantity: quantity },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error updating quantity.');
+                    }
+                },
+                error: function() {
+                    alert('Error updating quantity.');
+                }
+            });
+        });
+
+        $('.remove-from-cart').click(function() {
+            var button = $(this);
+            var productId = button.data('product-id');
+
+            $.ajax({
+                url: 'add_to_cart.php',
+                type: 'POST',
+                data: { product_id: productId, action: 'remove' },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error removing product from cart.');
+                    }
+                },
+                error: function() {
+                    alert('Error removing product from cart.');
+                }
+            });
+        });
+    });
+    </script>
 </head>
 <body>
     <header>
@@ -58,11 +105,15 @@ $total_amount = 0;
                         $total_amount += $product['price'] * $quantity;
                     ?>
                         <div class="cart-item">
-                            <img src="project_folder/images/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['title']); ?>">
+                            <img src="images/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['title']); ?>">
                             <h2><?php echo htmlspecialchars($product['title']); ?></h2>
                             <p>Price: <?php echo htmlspecialchars($product['price']); ?></p>
-                            <p>Quantity: <?php echo htmlspecialchars($quantity); ?></p>
+                            <p>
+                                Quantity:
+                                <input type="number" class="update-quantity" data-product-id="<?php echo $product_id; ?>" value="<?php echo htmlspecialchars($quantity); ?>" min="1">
+                            </p>
                             <p>Total: <?php echo htmlspecialchars($product['price'] * $quantity); ?></p>
+                            <button type="button" class="remove-from-cart" data-product-id="<?php echo $product_id; ?>">Remove from Cart</button>
                         </div>
                     <?php
                     } else {
