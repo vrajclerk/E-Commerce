@@ -23,7 +23,7 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
     $(document).ready(function() {
         // Initialize offset and limit for product loading
         var offset = 0;
-        var limit = 5;
+        var limit = 4;
 
         // Function to load products with optional reset flag
         function loadProducts(reset = false) {
@@ -105,26 +105,33 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
 
         // Increase or decrease product quantity handling
         $(document).on('click', '.increase-quantity, .decrease-quantity', function(e) {
-            e.preventDefault(); // Prevent default link click behavior
-            var productId = $(this).data('product-id'); // Get the product ID from the data attribute
-            var action = $(this).hasClass('increase-quantity') ? 'increase' : 'decrease'; // Determine action based on the class
-            var quantity = form.find('input[name="quantity"]').val();
-            
-            // AJAX request to update product quantity in the cart
-            $.ajax({
-                url: 'update_quantity.php',
-                type: 'POST',
-                data: { product_id: productId, action: action },
-                success: function(response) {
-                    loadProducts(true); // Reload the products list
-                    alert('quantity updated');
-                },
-                error: function() {
-                    alert('Error updating quantity.');
-                }
-            });
+        e.preventDefault();
+        var button = $(this);
+        var productId = button.data('product-id');
+        var action = button.hasClass('increase-quantity') ? 'increase' : 'decrease';
+        var quantitySpan = button.siblings('.quantity');
+        var currentQuantity = parseInt(quantitySpan.text());
+
+        if (action === 'increase') {
+            currentQuantity += 1;
+        } else if (action === 'decrease' && currentQuantity > 1) {
+            currentQuantity -= 1;
+        }
+
+        $.ajax({
+            url: 'add_to_cart.php',
+            type: 'POST',
+            data: { product_id: productId, action: action },
+            success: function(response) {
+                quantitySpan.text(currentQuantity);
+                alert('Quantity updated');
+            },
+            error: function() {
+                alert('Error updating quantity.');
+            }
         });
     });
+});
     </script>
 </head>
 <body>
@@ -161,6 +168,21 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
     <main>
         
         <div id="product-list" class="products"></div>
+        <!-- <div class="product-item" data-product-id="1">
+        <h3>Product Name</h3>
+        <form class="add-to-cart-form">
+            <input type="hidden" name="product_id" value="1">
+            <input type="number" name="quantity" value="1" min="1">
+            <button type="submit">Add to Cart</button>
+        </form>
+        <div class="quantity-controls">
+            <button class="decrease-quantity" data-product-id="1">-</button>
+            <span class="quantity">1</span>
+            <button class="increase-quantity" data-product-id="1">+</button> -->
+        </div>
+    </div>
+</div>
+
         <button id="load-more">More</button>
     </main>
 </body>

@@ -1,23 +1,32 @@
 <?php
+include 'db.php';
 session_start();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $product_id = intval($_POST['product_id']);
+$product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+$action = isset($_POST['action']) ? $_POST['action'] : '';
+$quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
 
-    // Initialize the cart if not already
+if ($product_id > 0) {
     if (!isset($_SESSION['cart'])) {
         $_SESSION['cart'] = [];
     }
 
-    // Check if the product is already in the cart
     if (isset($_SESSION['cart'][$product_id])) {
-        $_SESSION['cart'][$product_id]++;
+        if ($action === 'increase') {
+            $_SESSION['cart'][$product_id] += 1;
+        } elseif ($action === 'decrease') {
+            if ($_SESSION['cart'][$product_id] > 1) {
+                $_SESSION['cart'][$product_id] -= 1;
+            }
+        } else {
+            $_SESSION['cart'][$product_id] = $quantity;
+        }
     } else {
-        $_SESSION['cart'][$product_id] = 1;
+        $_SESSION['cart'][$product_id] = $quantity;
     }
 
-    // Redirect back to the previous page
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
-    exit;
+    echo json_encode(['status' => 'success', 'message' => 'Quantity updated']);
+} else {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid product ID']);
 }
 ?>

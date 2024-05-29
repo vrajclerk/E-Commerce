@@ -27,6 +27,7 @@ while ($row = $result->fetch_assoc()):
         <p>
         <button class="increase-quantity" data-product-id="<?php echo $row['product_id']; ?>">+</button>
         <!-- <input type="number" class="quantity" data-product-id="<?php echo $row['product_id']; ?>" value="<?php echo $row['quantity']; ?>" min="1"> -->
+        <span class="quantity">1</span>
         <!-- echo '<p>Quantity: <span class="quantity-display">' . $quantity_in_cart . '</span></p>'; -->
         <button class="decrease-quantity" data-product-id="<?php echo $row['product_id']; ?>">-</button>
 </p>
